@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>안전백과 - 산업재해 전문 뉴스 플랫폼</title>
+    <style>
+        /* 기본 레이아웃 */
+        body { font-family: 'Pretendard', -apple-system, sans-serif; margin: 0; padding: 0; color: #333; background: #f4f7f9; line-height: 1.6; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 50px; background: #1A3A5F; color: white; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo { font-size: 24px; font-weight: bold; cursor: pointer; }
+        .menu-icon { font-size: 28px; cursor: pointer; }
+
+        /* 사이드 메뉴 설정 */
+        .side-menu { position: fixed; top: 0; right: -400px; width: 380px; height: 100%; background: #fff; box-shadow: -5px 0 15px rgba(0,0,0,0.1); transition: 0.4s; z-index: 1000; padding: 30px; box-sizing: border-box; overflow-y: auto; }
+        .side-menu.active { right: 0; }
+        .close-btn { font-size: 30px; cursor: pointer; float: right; color: #999; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; backdrop-filter: blur(2px); }
+        .overlay.active { display: block; }
+
+        .side-section h4 { border-bottom: 2px solid #1A3A5F; padding-bottom: 10px; color: #1A3A5F; margin-bottom: 15px; }
+        .tag-list { display: flex; flex-direction: column; gap: 5px; }
+        .tag { font-size: 13px; background: #f0f2f5; color: #333; padding: 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid #ddd; }
+        .tag:hover { background: #1A3A5F; color: #fff; border-color: #1A3A5F; }
+
+        /* 히어로 및 메인 콘텐츠 */
+        .hero { background: #fff; text-align: center; padding: 40px 20px; border-bottom: 1px solid #eee; }
+        .hero h1 { font-size: 28px; color: #1A3A5F; margin-bottom: 10px; }
+        .main-content { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        
+        /* 핫 이슈 (사고 관련 기사 전용 상단 고정) */
+        .pinned-section { margin-bottom: 50px; }
+        .pinned-title { font-size: 20px; font-weight: bold; color: #e74c3c; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .pinned-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .pinned-card { background: #fff5f5; border: 2px solid #e74c3c; border-radius: 12px; position: relative; }
+        .pin-badge { position: absolute; top: -10px; left: 10px; background: #e74c3c; color: white; padding: 2px 8px; font-size: 11px; border-radius: 4px; font-weight: bold; }
+
+        /* 일반 뉴스 그리드 스타일 */
+        .section-title { font-size: 22px; font-weight: bold; margin-bottom: 25px; border-left: 6px solid #1A3A5F; padding-left: 15px; }
+        .news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+        .news-card { background: #fff; border: 1px solid #e1e4e8; border-radius: 10px; overflow: hidden; transition: 0.3s; cursor: pointer; display: flex; flex-direction: column; }
+        .news-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .card-img { height: 100px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; font-size: 30px; position: relative; border-bottom: 1px solid #eee; }
+        .category-label { position: absolute; top: 10px; left: 10px; padding: 3px 8px; border-radius: 4px; font-size: 10px; color: #fff; font-weight: bold; }
+        .card-text { padding: 15px; flex-grow: 1; }
+        .card-text h3 { margin: 0 0 10px; font-size: 15px; line-height: 1.4; color: #1A3A5F; }
+        .card-text p { margin: 0; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo" onclick="location.reload()">🚨 안전백과 (Safety Wiki)</div>
+    <div class="menu-icon" onclick="toggleMenu()">☰</div>
+</header>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<div class="side-menu" id="sideMenu">
+    <span class="close-btn" onclick="toggleMenu()">&times;</span>
+    <div class="side-section">
+        <h4>🔍 전문 카테고리</h4>
+        <div class="tag-list" id="category-list"></div>
+    </div>
+</div>
+
+<section class="hero">
+    <h1>산업안전·보건·환경(EHS) 실시간 뉴스 분석</h1>
+    <p>주요 사고 사례 및 분야별 전문 지식을 데이터 기반으로 제공합니다.</p>
+</section>
+
+<main class="main-content">
+    <div class="pinned-section">
+        <div class="pinned-title">🚨 주요 사고·재해 브리핑 (TOP 3)</div>
+        <div class="pinned-grid" id="pinnedGrid"></div>
+    </div>
+
+    <div class="section-title" id="gridTitle">종합 안전 정보</div>
+    <div id="news-loader" style="text-align:center; padding: 50px;">안전 데이터를 분석 중입니다...</div>
+    <div class="news-grid" id="newsGrid"></div>
+</main>
+
+<script>
+    // 카테고리별 컬러 및 키워드 데이터 (A~J)
+    const categories = {
+        'A. 사고·재해 브리핑': { color: '#e74c3c', keywords: ['사망', '중상', '추락', '끼임', '질식', '폭발', '화재', '붕괴', '감전', '누출', '중대재해', '아차사고'] },
+        'B. 산업안전·보건': { color: '#2ecc71', keywords: ['위험성평가', 'TBM', '작업허가서', 'LOTO', '보호구', 'PPE', '안전문화', '안전교육', '현장점검', '협력사', '근골격계', '직업병'] },
+        'C. 건설·플랜트 안전': { color: '#f1c40f', keywords: ['가설구조물', '비계', '타워크레인', '거푸집', '굴착', '매설물', '고소작업', '양중', '신호수', '정비', '보수'] },
+        'D. 화공·공정안전': { color: '#e67e22', keywords: ['PSM', 'HAZOP', 'LOPA', 'SIL', 'SIS', 'PSV', '가스검지', '정전기', '방폭', 'MSDS', 'SDS', '화학사고'] },
+        'E. 화재·방재·소방': { color: '#c0392b', keywords: ['화재원인', '피난', '제연', '스프링클러', '소화설비', '방화구획', '비상대응', 'EPR', '소방점검'] },
+        'F. 교통·모빌리티': { color: '#3498db', keywords: ['자율주행', 'ADAS', '차량안전', '철도', '항공', '해양', '물류', '운행기록', '졸음', '배터리', '열폭주'] },
+        'G. 전기·기계·설비': { color: '#9b59b6', keywords: ['프레스', '리프트', '컨베이어', '압력용기', '보일러', '고압가스', '안전인증', '인터록', '가드'] },
+        'H. 환경·산업위생': { color: '#16a085', keywords: ['작업환경측정', '유해인자', 'VOC', '유기용제', '발암물질', '석면', '라돈', '중금속', '노출평가', '폐기물'] },
+        'I. 법·제도·가이드': { color: '#2c3e50', keywords: ['산업안전보건법', '중대재해처벌법', 'KOSHA', '고시', '지침', '판례', '감독', '과태료', 'ISO 45001'] },
+        'J. 기술·데이터·사례': { color: '#7f8c8d', keywords: ['AI 안전', '비전검사', '웨어러블', 'IoT', '디지털 트윈', '예지보전', 'KPI', '사고조사', 'RCA', 'FMEA'] }
+    };
+
+    // 핫이슈 선별 키워드 (사고 관련)
+    const incidentHotKeywords = ['사망', '중대재해', '사고', '누출', '폭발', '추락', '끼임', '매몰', '화재', '붕괴'];
+
+    function toggleMenu() {
+        document.getElementById('sideMenu').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    // 사이드바 카테고리 리스트 생성
+    const categoryList = document.getElementById('category-list');
+    Object.keys(categories).forEach(key => {
+        const btn = document.createElement('div');
+        btn.className = 'tag';
+        btn.innerText = key;
+        btn.onclick = () => { fetchSafetyNews(key.split('. ')[1]); toggleMenu(); };
+        categoryList.appendChild(btn);
+    });
+
+    // 뉴스 데이터 Fetch 및 필터링 함수
+    async function fetchSafetyNews(keyword = '산업안전 중대재해') {
+        const newsGrid = document.getElementById('newsGrid');
+        const pinnedGrid = document.getElementById('pinnedGrid');
+        const loader = document.getElementById('news-loader');
+        
+        loader.style.display = 'block';
+        newsGrid.innerHTML = '';
+        pinnedGrid.innerHTML = '';
+        document.getElementById('gridTitle').innerText = `전문 브리핑: ${keyword}`;
+
+        const query = encodeURIComponent(keyword);
+        const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`;
+        const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            loader.style.display = 'none';
+
+            const analyzedNews = data.items.map(item => {
+                let hitCount = 0;
+                let matchedCat = "기타";
+                let matchedColor = "#95a5a6";
+                let isIncident = false;
+
+                // 사고 키워드 포함 여부 체크
+                incidentHotKeywords.forEach(k => {
+                    if (item.title.includes(k)) isIncident = true;
+                });
+
+                // 카테고리 매칭 및 키워드 히트 수 계산
+                for (const [catName, catData] of Object.entries(categories)) {
+                    catData.keywords.forEach(k => {
+                        if (item.title.includes(k)) {
+                            hitCount++;
+                            matchedCat = catName.split('. ')[1];
+                            matchedColor = catData.color;
+                        }
+                    });
+                }
+                return { ...item, isIncident, matchedCat, matchedColor, hitCount };
+            });
+
+            // 1. 사고 관련 기사 중 키워드 밀도가 높은 순으로 핫이슈 3개 선별
+            const pinnedNews = analyzedNews
+                .filter(n => n.isIncident)
+                .sort((a, b) => b.hitCount - a.hitCount)
+                .slice(0, 3);
+
+            // 2. 고정 뉴스를 제외한 나머지 리스트
+            const regularNews = analyzedNews.filter(n => !pinnedNews.includes(n)).slice(0, 12);
+
+            pinnedNews.forEach(item => {
+                pinnedGrid.insertAdjacentHTML('beforeend', createCard(item, true));
+            });
+
+            regularNews.forEach(item => {
+                newsGrid.insertAdjacentHTML('beforeend', createCard(item, false));
+            });
+
+        } catch (error) {
+            loader.innerText = "뉴스를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.";
+        }
+    }
+
+    // 카드 생성 HTML 템플릿
+    function createCard(item, isPinned) {
+        return `
+            <div class="news-card ${isPinned ? 'pinned-card' : ''}" onclick="window.open('${item.link}', '_blank')">
+                ${isPinned ? '<span class="pin-badge">BREAKING INCIDENT</span>' : ''}
+                <div class="card-img">
+                    <span class="category-label" style="background: ${item.matchedColor};">${item.matchedCat}</span>
+                    ${isPinned ? '⚠️' : '📄'}
+                </div>
+                <div class="card-text">
+                    <h3>${item.title}</h3>
+                    <p>${item.pubDate.split(' ')[0]} | ${item.author || '안전 뉴스'}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // 페이지 로드 시 초기 실행
+    window.onload = () => fetchSafetyNews();
+</script>
+
+</body>
+</html>
