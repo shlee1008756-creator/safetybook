@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>안전백과 - 산업재해 뉴스 플랫폼</title>
+    <style>
+        /* 기본 설정 */
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; margin: 0; padding: 0; color: #333; overflow-x: hidden; line-height: 1.6; }
+        
+        /* 헤더 */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 50px; background: #fff; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 24px; font-weight: bold; color: #1A3A5F; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .menu-icon { font-size: 28px; cursor: pointer; color: #1A3A5F; }
+
+        /* 사이드 메뉴 */
+        .side-menu { position: fixed; top: 0; right: -400px; width: 350px; height: 100%; background: #fff; box-shadow: -5px 0 15px rgba(0,0,0,0.1); transition: 0.4s cubic-bezier(0.075, 0.82, 0.165, 1); z-index: 1000; padding: 30px; box-sizing: border-box; overflow-y: auto; }
+        .side-menu.active { right: 0; }
+        .close-btn { font-size: 30px; cursor: pointer; float: right; color: #999; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; z-index: 999; backdrop-filter: blur(2px); }
+        .overlay.active { display: block; }
+
+        .search-box { margin-top: 40px; width: 100%; padding: 12px; border: 2px solid #1A3A5F; border-radius: 8px; box-sizing: border-box; }
+        .side-section { margin-top: 35px; }
+        .side-section h4 { border-bottom: 2px solid #1A3A5F; padding-bottom: 10px; margin-bottom: 15px; color: #1A3A5F; }
+        .tag { font-size: 10px; background: #f0f2f5; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #555; margin-right: 5px; }
+
+        /* 히어로 섹션 */
+        .hero { background: #fbfbfb; text-align: center; padding: 80px 20px; }
+        .hero h1 { font-size: 36px; color: #1A3A5F; margin-bottom: 10px; }
+        .hero-img-container { max-width: 900px; margin: 40px auto; background: #1A3A5F; height: 300px; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
+
+        /* 뉴스 그리드 */
+        .main-content { max-width: 1100px; margin: 60px auto; padding: 0 20px; }
+        .section-title { font-size: 24px; font-weight: bold; margin-bottom: 30px; border-left: 5px solid #FF4500; padding-left: 15px; }
+        .news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .news-card { background: #fff; border: 1px solid #eee; border-radius: 12px; overflow: hidden; transition: 0.3s; cursor: pointer; }
+        .news-card:hover { transform: translateY(-10px); border-color: #1A3A5F; }
+        .card-img { height: 180px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; font-size: 50px; position: relative; }
+        .category-label { position: absolute; top: 15px; left: 15px; padding: 5px 12px; border-radius: 20px; font-size: 11px; color: #fff; font-weight: bold; }
+        .card-text { padding: 20px; }
+        .card-text h3 { margin: 0 0 10px; font-size: 17px; line-height: 1.4; }
+        .card-text p { margin: 0; color: #777; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">🚨 안전백과</div>
+    <div class="menu-icon" onclick="toggleMenu()">☰</div>
+</header>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<div class="side-menu" id="sideMenu">
+    <span class="close-btn" onclick="toggleMenu()">&times;</span>
+    <input type="text" class="search-box" placeholder="사고 사례 키워드 검색...">
+    <div class="side-section">
+        <h4>📂 카테고리</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <span class="tag" style="background:#1A3A5F; color:#fff; padding:8px;">에너지</span>
+            <span class="tag" style="background:#1A3A5F; color:#fff; padding:8px;">화학</span>
+            <span class="tag" style="background:#1A3A5F; color:#fff; padding:8px;">반도체</span>
+        </div>
+    </div>
+</div>
+
+<section class="hero">
+    <h1>산업현장의 안전, 데이터로 지킵니다</h1>
+    <p>실시간 구글 뉴스 기반 산업재해 분석 플랫폼</p>
+    <div class="hero-img-container">
+        🚧 실시간 안전 데이터 분석 중...
+    </div>
+</section>
+
+<main class="main-content">
+    <div class="section-title">최신 안전 동향 (실시간)</div>
+    <div id="news-loader" style="text-align:center; padding: 50px;">뉴스를 불러오는 중입니다...</div>
+    <div class="news-grid" id="newsGrid"></div>
+</main>
+
+<script>
+    function toggleMenu() {
+        document.getElementById('sideMenu').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    // 뉴스 불러오기 함수
+    async function fetchSafetyNews() {
+        const query = encodeURIComponent('산업재해 사고 안전');
+        const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`;
+        const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            const newsGrid = document.getElementById('newsGrid');
+            const loader = document.getElementById('news-loader');
+            
+            loader.style.display = 'none';
+            newsGrid.innerHTML = '';
+
+            data.items.slice(0, 6).forEach(item => {
+                // 키워드별 카테고리 자동 분류
+                let category = "일반안전";
+                let color = "#95a5a6";
+                let emoji = "📄";
+
+                if(item.title.includes('화학')) { category = "화학/위험물"; color = "#e67e22"; emoji = "🧪"; }
+                else if(item.title.includes('반도체')) { category = "반도체/설비"; color = "#3498db"; emoji = "💻"; }
+                else if(item.title.includes('수소')) { category = "수소/에너지"; color = "#2ecc71"; emoji = "💧"; }
+                else if(item.title.includes('건설') || item.title.includes('추락')) { category = "건설현장"; color = "#f1c40f"; emoji = "🏗️"; }
+
+                const card = `
+                    <div class="news-card" onclick="window.open('${item.link}', '_blank')">
+                        <div class="card-img">
+                            <span class="category-label" style="background: ${color};">${category}</span>
+                            ${emoji}
+                        </div>
+                        <div class="card-text">
+                            <h3>${item.title}</h3>
+                            <p>${item.pubDate.split(' ')[0]} | ${item.author || '뉴스'}</p>
+                        </div>
+                    </div>
+                `;
+                newsGrid.insertAdjacentHTML('beforeend', card);
+            });
+        } catch (error) {
+            document.getElementById('news-loader').innerText = "데이터를 불러오지 못했습니다.";
+        }
+    }
+
+    window.onload = fetchSafetyNews;
+</script>
+
+</body>
+</html>
